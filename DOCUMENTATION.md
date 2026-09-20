@@ -5,7 +5,7 @@
 ## 1. What This Is
 
 > **Auth Reuse Disclosure:**
-> Authentication in this repository is reused from the Momentum Authentication slice (Assessment 1). It implements secure, database-backed sessions (`Session` table in PostgreSQL) where random 32-byte hexadecimal session tokens are stored in the database and associated with a user ID. On sign-out or revocation, the session record is deleted directly from the database, ensuring immediate server-side invalidation.
+> Authentication in this repository is reused from the Momentum Authentication slice (Assessment 1), specifically focused on core registration, login, and database-backed session management (`User` and `Session` models in PostgreSQL with random 32-byte hexadecimal session tokens). Auxiliary authentication workflows present in Assessment 1—specifically `PasswordReset` and `EmailVerification` token models—were intentionally omitted from this slice as they are outside the functional scope of receipt upload and AI extraction processing.
 
 > **AI Provider Switch Disclosure:**
 > This slice uses **DeepSeek** as its AI provider, integrated via the official `openai` Node SDK pointed at DeepSeek's OpenAI-compatible endpoint (`baseURL: "https://api.deepseek.com"`). Anthropic Claude was originally targeted during initial scaffolding, but an account billing/credit constraint ("credit balance is too low") prevented live extraction calls. The architecture was cleanly switched to DeepSeek's `deepseek-flash` model, which provides native multimodal vision understanding and forced function/tool calling.
@@ -34,9 +34,16 @@
    ```
 2. Configure `.env` with your credentials:
    ```env
+   # Database Connection (PostgreSQL)
    DATABASE_URL="postgresql://postgres:postgres@localhost:5432/momentum_receipts?schema=public"
+
+   # Session Secret for Reused Authentication
    SESSION_SECRET="momentum-receipts-secure-session-key-at-least-32-chars-long"
-   DEEPSEEK_API_KEY="sk-..."
+
+   # DeepSeek API Key (Set by hand by user - do not generate or guess)
+   # DEEPSEEK_API_KEY="your-deepseek-api-key-here"
+
+   # Application Port / Base URL
    NEXT_PUBLIC_APP_URL="http://localhost:3000"
    ```
 
@@ -276,36 +283,53 @@ The system implements two distinct AI roles with independent system prompts, tem
   3. If the second attempt passes, the job succeeds (`DONE`).
   4. If the second attempt also fails, the job transitions to `FAILED` with a detailed error message and preserves `rawOutput` for inspection.
 
-### 6. Jobs, Workers & Concurrency Capping
-- **Why Asynchronous:** Receipt extraction involves network latency and vision model inference (3-8 seconds per image). Blocking the HTTP request causes client timeouts and poor UX.
-- **Concurrency Cap Mechanism:** `JobWorker` tracks `activeJobsCount`. It only claims up to `CONFIG.CONCURRENCY_CAP` (2) jobs at any moment. When a job completes, a slot opens and triggers the next FIFO job.
+### 6. Jobs and Workers
+- **What it is:** Decoupling receipt ingestion from receipt processing. An API endpoint accepts the upload and writes a `Job` record to PostgreSQL with status `PENDING`, while a separate background worker (`src/lib/worker.ts`) processes the queued jobs asynchronously.
+- **Why used (Concrete failure avoided):** Receipt extraction requires image reading, base64 encoding, outbound network calls to DeepSeek, vision model inference, and schema validation—taking 3 to 8 seconds per image. A synchronous API request would tie up HTTP server connection threads, cause client-side browser timeouts, and create an unresponsive user experience during batch uploads.
+- **How implemented:** In-process worker queue loop that periodically claims `PENDING` jobs, sets `status: PROCESSING`, executes extraction, and marks `status: DONE` or `status: FAILED`.
+- **Alternatives considered & chosen against:** Synchronous inline route processing; rejected due to inevitable HTTP 504 gateway timeouts under realistic network and vision inference latency.
 
-### 7. Rate Limiting as a Cost Control (O(1) Uploads vs. O(N) Historical Summaries)
-- **Role 1 (Uploads):** 10 requests / 60s. Each upload processes a single receipt image (O(1) token payload, ~1,400 input tokens).
-- **Role 2 (Financial Summary):** 3 requests / 60s. Each summary call bundles and re-processes the user's *entire* historical receipt collection into a single multi-record prompt (O(N) tokens). For a user with 33 receipts, a single Role 2 call consumes 4,341 prompt tokens; for 100 receipts, it would exceed 12,000 prompt tokens. Allowing 10 summary requests/min would allow a single user to consume over 100,000 input tokens every minute. A stricter limit of 3 req/60s provides an essential mathematical cost ceiling.
+### 7. Queues, FIFO Ordering & Concurrency Capping
+- **What it is:** A strict architectural limit on the number of simultaneous active AI calls permitted across the entire system at any given moment, processing jobs in First-In, First-Out (FIFO) creation order.
+- **Why used (Concrete failure avoided):** If a user uploads 10 or 50 receipt images simultaneously, spawning 50 unconstrained concurrent API calls would immediately trigger provider rate-limit rejections (HTTP 429), exhaust server memory, and create unbounded cost spikes.
+- **How implemented:** `JobWorker` tracks an atomic `activeJobsCount` counter, capping active execution at `CONFIG.CONCURRENCY_CAP` (2). New jobs remain in `PENDING` state until an active slot completes and frees capacity.
+- **Alternatives considered & chosen against:** Uncapped `Promise.all()` parallel execution; rejected due to guaranteed rate-limit thrashing and unpredictable provider billing bursts.
 
-### 8. UI Display Labels vs. Database Enum Mapping
-- The PostgreSQL schema defines four explicit states: `enum JobStatus { PENDING, PROCESSING, DONE, FAILED }`.
-- The frontend UI presentation layer in `src/components/receipts/JobsList.tsx` maps these database states into user-friendly badge labels:
+### 8. Rate Limiting as a Cost Control (O(1) Uploads vs. O(N) Historical Summaries)
+- **What it is:** Enforcing per-user request rate ceilings on both receipt uploads and summary generation using an in-memory sliding-window token algorithm (`src/lib/rate-limit.ts`).
+- **Why used (Concrete failure avoided):** Rate limiting is a mandatory **financial security guardrail**. Without it, malicious actors or buggy automated loops could trigger thousands of paid API calls in seconds, causing catastrophic billing damage.
+- **How implemented:**
+  - **Role 1 (Uploads — 10 req / 60s):** Each file upload triggers single-image extraction ($O(1)$ token payload, ~1,400 input tokens).
+  - **Role 2 (Financial Summary — 3 req / 60s):** Each summary call bundles and re-processes the user's *entire* historical receipt collection ($O(N)$ tokens). For 33 receipts, a single call consumes 4,341 prompt tokens; for 100 receipts, it exceeds 12,000 prompt tokens. A stricter limit of 3 req/60s prevents exponential token consumption.
+- **Alternatives considered & chosen against:** Unthrottled API access or generic IP-only blocking; rejected because authenticated user-level token bounding provides predictable per-account spend ceilings.
+
+### 9. Object Storage vs. Database Storage (Why Files Live in Object Storage Rather than the Database)
+- **What it is:** Physical separation of opaque receipt image binaries from transactional database records. The database stores only a lightweight unique string `storageKey` (e.g. `receipt_b9933221-3fe4-4cb6-a67b-402967663249.jpg`), while the binary image bytes reside on dedicated file/object storage.
+- **Why used (Concrete failure avoided):** Receipt photographs range from 500KB to 5MB each. Storing raw binary bytes (`BYTEA` or base64 text) directly inside PostgreSQL rows causes rapid database table bloat, degrades PostgreSQL buffer cache efficiency (forcing cache evictions of hot index pages), dramatically slows down routine relational queries, and leads to massive database backup and snapshot size explosions.
+- **How implemented:** The upload handler writes files to a dedicated local storage directory (`/uploads/`—the documented local development equivalent of an S3 bucket) and writes only the unique `storageKey` filename string to the `Job.storageKey` column in PostgreSQL.
+- **Alternatives considered & chosen against:** Inline database storage (`BYTEA` columns or base64 encoded text in Prisma); rejected because relational databases are optimized for structured tabular querying, not blob streaming.
+
+### 10. The Cost Model: Unit Cost Estimation & Theoretical Spend Caps
+- **What it is:** A mathematical calculation of the monetary cost per receipt extraction and the upper bound on system spend under maximum operational load.
+- **Empirical Token Telemetry:**
+  - **Prompt Tokens:** ~1,300 - 1,400 tokens per receipt image + schema definition.
+  - **Prompt Cache Hit Rate:** ~1,150 tokens cached on repeated schema prompts (DeepSeek prompt caching reduces input costs by up to 90%).
+  - **Completion Tokens:** ~150 - 250 tokens for structured function arguments.
+- **Cost Calculation per Receipt (DeepSeek Flash Pricing):**
+  - Uncached Input: ~250 tokens × $0.14 / 1M = ~$0.000035
+  - Cached Input: ~1,150 tokens × $0.014 / 1M = ~$0.000016
+  - Output: ~200 tokens × $0.28 / 1M = ~$0.000056
+  - **Total Cost per Receipt Extraction:** ~$0.00011 (approximately **1/90th of a single US cent**).
+- **Hard Cost Ceiling:** Concurrency cap of 2 and user rate limit of 10 uploads/min ensure the maximum theoretical spend per user is bounded at **<$0.002 per minute**.
+
+### 11. UI Display Labels vs. Database Enum Mapping
+- **What it is:** A presentation-layer mapping that translates internal database state identifiers into clear, user-friendly status badges in the UI.
+- **How implemented:**
   - `PENDING` ➔ `Queued` (Yellow clock badge)
   - `PROCESSING` ➔ `Processing` (Green pulse loader badge)
   - `DONE` ➔ `Complete` (Green checkmark badge)
   - `FAILED` ➔ `Failed` (Red error badge)
-- This is strictly a display presentation mapping over the real database enum; the database, API routes, and backend workers strictly preserve and persist `PENDING`, `PROCESSING`, `DONE`, and `FAILED`.
-
-### 9. Cost Model Estimation & Empirical Latency
-- **Measured Real-World Latency:** ~4.0s - 4.1s per receipt extraction call (including base64 encoding, DeepSeek multimodal processing with `reasoning_effort: "none"`, and Zod validation).
-- **Observed Token Breakdown (from Live DeepSeek Telemetry):**
-  - **Prompt Tokens:** ~1,300 - 1,400 tokens per receipt image + schema contract.
-  - **Prompt Cache Hit Rate:** ~1,150 tokens cached on repeated schema prompts (DeepSeek prompt caching reduces input cost by up to 90%).
-  - **Completion Tokens:** ~150 - 250 tokens for structured tool call arguments.
-- **DeepSeek Pricing:** DeepSeek Flash offers highly competitive pricing ($0.14 / 1M uncached input tokens, $0.014 / 1M cached input tokens, $0.28 / 1M output tokens).
-- **Estimated Cost per Extraction:**
-  - Uncached Input: ~250 tokens × $0.14 / 1M = ~$0.000035
-  - Cached Input: ~1,150 tokens × $0.014 / 1M = ~$0.000016
-  - Output: ~200 tokens × $0.28 / 1M = ~$0.000056
-  - **Total per Receipt:** ~$0.00011 (approx. 1/90th of a cent per receipt).
-- **Hard Cost Ceiling:** Concurrency cap of 2 and user rate limit of 10 req/min ensure maximum theoretical spend per user is capped under $0.002/minute.
+- **Integrity Guarantee:** This is strictly a display presentation mapping in `JobsList.tsx`; the database, Prisma client, and API routes strictly preserve and persist `PENDING`, `PROCESSING`, `DONE`, and `FAILED`.
 
 ---
 
@@ -331,8 +355,12 @@ The system implements two distinct AI roles with independent system prompts, tem
    - *Problem:* Initial Step 4 verification utilized artificially generated receipt images, which lacked genuine real-world optical noise (uneven thermal printing, paper folds, compression artifacts, pen ink annotations).
    - *Resolution:* Discarded the AI-generated test runs and downloaded authentic real-world photographed receipts from the ICDAR SROIE (Scanned Receipt OCR and Information Extraction) dataset. DeepSeek Vision successfully extracted merchant names, ISO dates, minor-unit totals, and line items across all real physical samples.
 
+---
+
 ## 7. What This Slice Does Not Handle
 
+- **Auxiliary Authentication Flows (Password Reset & Email Verification):**
+  Intentionally omitted from this slice. While present in the full Momentum Authentication system (Assessment 1), password reset tokens and email verification workflows are outside the functional scope of receipt upload and AI extraction processing, and were streamlined to direct database-backed session management.
 - **Real-World Extraction Edge Case: Rounding Adjustments vs. Raw Subtotals:**
   On physical cash receipts in jurisdictions with statutory cash rounding mechanisms (e.g., Malaysia, sample SROIE #003), the product line item was printed as `80.91` (8091 minor units) with an explicit `-0.01` rounding adjustment line, resulting in a final paid total of `80.90` (8090 minor units). DeepSeek Vision accurately read the product price (8091) and the circled final total (8090), but omitted the negative adjustment line item, producing a 1-cent delta between the line-item sum and the grand total. The Zod schema intentionally validates individual non-negative amounts without enforcing strict mathematical line-item summation equality, accommodating real-world variations such as cash rounding, non-itemized taxes, and service charges.
 - **Multi-Tenant Team Billing:** Does not charge customer credit cards per receipt extraction.
