@@ -1,0 +1,405 @@
+/* ========================================================================
+ * MOMENTUM DESIGN SYSTEM — Complete Design System (Primitives + Tokens)
+ * ========================================================================
+ *
+ * Single-file import containing every design token.
+ * 
+ * This file merges:
+ *   1. Primitive colour palettes  (--primitive-*)
+ *   2. Colour roles               (--color-*)
+ *   3. Spacing scale              (--spacing-*)
+ *   4. Typography styles          (--typo-*)
+ * 
+ * Import this file if you prefer a single <link> or @import.
+ * For finer-grained control, import momentum-primitives.css and
+ * momentum-tokens.css separately.
+ * 
+ * ⚠  REMINDER: Only --color-* variables should be used in UI code.
+ *    --primitive-* variables are foundational and must not be applied
+ *    directly to component styles.
+ *
+ * AUTO-GENERATED — Do not edit by hand.
+ * Source : momentum-design-system.tokens.json
+ * Script : tokens-to-css.js
+ * Date   : 2026-09-07T13:05:37.530Z
+ * ======================================================================== */
+
+:root {
+
+  /* ================================================================== */
+  /*  SECTION 1 — PRIMITIVE COLOUR PALETTES                             */
+  /*  Foundation layer. Do NOT use directly in UI component styles.      */
+  /* ================================================================== */
+
+  /* ── Key Colors Group ── */
+  --primitive-primary-key-color: #2F7D5A;
+  --primitive-secondary-key-color: #39715E;
+  --primitive-tertiary-key-color: #C9852B;
+  --primitive-neutral-key-color: #17201C;
+  --primitive-neutral-variant-key-color: #3E4943;
+  --primitive-error-key-color: #C94A4A;
+  --primitive-success-key-color: #2F7D5A;
+
+  /* ── Primary Color Palette ── */
+  --primitive-primary-0: #000000;
+  --primitive-primary-10: #071A13;
+  --primitive-primary-20: #0E3527;
+  --primitive-primary-30: #174B37;
+  --primitive-primary-40: #236447;
+  --primitive-primary-50: #2F7D5A;
+  --primitive-primary-60: #4B9473;
+  --primitive-primary-70: #6EAA8F;
+  --primitive-primary-80: #9AC5B0;
+  --primitive-primary-90: #C5DED2;
+  --primitive-primary-95: #E2EEE8;
+  --primitive-primary-98: #F1F7F4;
+  --primitive-primary-99: #F8FBF9;
+  --primitive-primary-100: #FFFFFF;
+
+  /* ── Secondary Color Palette ── */
+  --primitive-secondary-0: #000000;
+  --primitive-secondary-10: #06130F;
+  --primitive-secondary-20: #0C261D;
+  --primitive-secondary-30: #123A2D;
+  --primitive-secondary-40: #174B3A;
+  --primitive-secondary-50: #1B5A45;
+  --primitive-secondary-60: #39715E;
+  --primitive-secondary-70: #5E8D7C;
+  --primitive-secondary-80: #8DAFA2;
+  --primitive-secondary-90: #BCD1C9;
+  --primitive-secondary-95: #DCE8E3;
+  --primitive-secondary-98: #F0F5F3;
+  --primitive-secondary-99: #F7FAF8;
+  --primitive-secondary-100: #FFFFFF;
+
+  /* ── Tertiary Color Palette ── */
+  --primitive-tertiary-0: #000000;
+  --primitive-tertiary-10: #2A1B05;
+  --primitive-tertiary-20: #53350A;
+  --primitive-tertiary-30: #7A4F0F;
+  --primitive-tertiary-40: #A06B18;
+  --primitive-tertiary-50: #C9852B;
+  --primitive-tertiary-60: #D79A48;
+  --primitive-tertiary-70: #E2B46F;
+  --primitive-tertiary-80: #EDC992;
+  --primitive-tertiary-90: #F4DEB9;
+  --primitive-tertiary-95: #F8EBD5;
+  --primitive-tertiary-98: #FCF5EA;
+  --primitive-tertiary-99: #FEFAF4;
+  --primitive-tertiary-100: #FFFFFF;
+
+  /* ── Neutral Color Palette ── */
+  --primitive-neutral-0: #000000;
+  --primitive-neutral-10: #17201C;
+  --primitive-neutral-20: #27312C;
+  --primitive-neutral-30: #3E4943;
+  --primitive-neutral-40: #55615B;
+  --primitive-neutral-50: #66736D;
+  --primitive-neutral-60: #7F8B85;
+  --primitive-neutral-70: #9BA59F;
+  --primitive-neutral-80: #B8C0BC;
+  --primitive-neutral-90: #D6DDD9;
+  --primitive-neutral-95: #E8ECEA;
+  --primitive-neutral-98: #F4F6F5;
+  --primitive-neutral-99: #F9FAF9;
+  --primitive-neutral-100: #FFFFFF;
+
+  /* ── Neutral Variant Color Palette ── */
+  --primitive-neutral-variant-0: #000000;
+  --primitive-neutral-variant-10: #17201C;
+  --primitive-neutral-variant-20: #27312C;
+  --primitive-neutral-variant-30: #3E4943;
+  --primitive-neutral-variant-40: #55615B;
+  --primitive-neutral-variant-50: #66736D;
+  --primitive-neutral-variant-60: #7F8B85;
+  --primitive-neutral-variant-70: #9BA59F;
+  --primitive-neutral-variant-80: #B8C0BC;
+  --primitive-neutral-variant-90: #D6DDD9;
+  --primitive-neutral-variant-95: #E8ECEA;
+  --primitive-neutral-variant-98: #F4F6F5;
+  --primitive-neutral-variant-99: #F9FAF9;
+  --primitive-neutral-variant-100: #FFFFFF;
+
+  /* ── Error Color Palette ── */
+  --primitive-error-0: #000000;
+  --primitive-error-10: #2B0D0D;
+  --primitive-error-20: #581A1A;
+  --primitive-error-30: #7E2525;
+  --primitive-error-40: #A73535;
+  --primitive-error-50: #C94A4A;
+  --primitive-error-60: #D66D6D;
+  --primitive-error-70: #E18E8E;
+  --primitive-error-80: #EBAFAF;
+  --primitive-error-90: #F4D0D0;
+  --primitive-error-95: #F9E3E3;
+  --primitive-error-98: #FDF3F3;
+  --primitive-error-99: #FEF8F8;
+  --primitive-error-100: #FFFFFF;
+
+  /* ── Success Color Palette ── */
+  --primitive-green-0: #000000;
+  --primitive-green-10: #071A13;
+  --primitive-green-20: #0E3527;
+  --primitive-green-30: #174B37;
+  --primitive-green-40: #236447;
+  --primitive-green-50: #2F7D5A;
+  --primitive-green-60: #4B9473;
+  --primitive-green-70: #6EAA8F;
+  --primitive-green-80: #9AC5B0;
+  --primitive-green-90: #C5DED2;
+  --primitive-green-95: #E2EEE8;
+  --primitive-green-98: #F1F7F4;
+  --primitive-green-99: #F8FBF9;
+  --primitive-green-100: #FFFFFF;
+
+  /* ================================================================== */
+  /*  SECTION 2 — COLOUR ROLES                                          */
+  /*  Semantic layer. USE THESE in all UI component styles.              */
+  /* ================================================================== */
+
+  /* ── Colour Roles (semantic colours — USE THESE in UI) ── */
+  --color-primary-colour: #2F7D5A;  /* {primitives colors.primary color palette.primary 50} */
+  --color-on-primary-colour: #FFFFFF;  /* {primitives colors.primary color palette.primary 100} */
+  --color-on-primary-container: #174B37;  /* {primitives colors.primary color palette.primary 30} */
+  --color-primary-container: #C5DED2;  /* {primitives colors.primary color palette.primary 90} */
+  --color-on-sencondary-container-2: #0C261D;  /* {primitives colors.secondary color palette.secondary 20} */
+  --color-secondary-colour: #39715E;  /* {primitives colors.secondary color palette.secondary 60} */
+  --color-on-secondary-colour: #FFFFFF;  /* {primitives colors.secondary color palette.secondary 100} */
+  --color-secondary-container: #BCD1C9;  /* {primitives colors.secondary color palette.secondary 90} */
+  --color-on-tertiary-container: #53350A;  /* {primitives colors.tertiary color palette.tertiary 20} */
+  --color-tertiary-colour: #C9852B;  /* {primitives colors.tertiary color palette.tertiary 50} */
+  --color-on-tertiary-color: #2A1B05;  /* {primitives colors.tertiary color palette.tertiary 10} */
+  --color-tertiary-container: #F4DEB9;  /* {primitives colors.tertiary color palette.tertiary 90} */
+  --color-surface-color: #F8F7F3;
+  --color-on-surface: #17201C;
+  --color-on-surface-variant: #66736D;
+  --color-surface-variant: #E8ECEA;
+  --color-surface-countainer-highest: #FFFFFF;
+  --color-surface-countainer-high: #FFFFFF;
+  --color-surface-countainer: #FFFFFF;
+  --color-surface-countainer-low: #F4F6F5;
+  --color-surface-countainer-lowest: #E8ECEA;
+  --color-inverse-surface: #173B32;
+  --color-inverse-on-surface: #FFFFFF;
+  --color-surface-tint: #2F7D5A;  /* {primitives colors.primary color palette.primary 50} */
+  --color-error: #C94A4A;  /* {primitives colors.error color palette.error 50} */
+  --color-on-error: #FFFFFF;  /* {primitives colors.error color palette.error 100} */
+  --color-on-error-container: #7E2525;  /* {primitives colors.error color palette.error 30} */
+  --color-error-container: #F4D0D0;  /* {primitives colors.error color palette.error 90} */
+
+  /* ================================================================== */
+  /*  SECTION 3 — SPACING SCALE                                         */
+  /* ================================================================== */
+
+  /* ── Spacing Scale ── */
+  --spacing-no-spacing: 0;
+  --spacing-extra-small-spacing: 4px;
+  --spacing-small-spacing-2: 8px;
+  --spacing-medium-spacing: 12px;
+  --spacing-base-spacing: 16px;
+  --spacing-large-spacing: 20px;
+  --spacing-extra-large-spacing-2: 24px;
+  --spacing-very-large-spacing: 32px;
+  --spacing-huge-spacing: 40px;
+  --spacing-section-spacing: 48px;
+  --spacing-display-spacing: 64px;
+
+  /* ================================================================== */
+  /*  SECTION 4 — TYPOGRAPHY                                            */
+  /* ================================================================== */
+
+  /* ── Typography: Display Large ── */
+  --typo-display-large-font-size: 40px;
+  --typo-display-large-font-family: "Inter";
+  --typo-display-large-font-weight: 700;
+  --typo-display-large-font-style: normal;
+  --typo-display-large-line-height: 48px;
+  --typo-display-large-letter-spacing: -0.8px;
+  --typo-display-large-text-decoration: none;
+  --typo-display-large-text-case: none;
+  --typo-display-large-font-stretch: normal;
+  --typo-display-large-paragraph-indent: 0;
+  --typo-display-large-paragraph-spacing: 0;
+
+  /* ── Typography: Display Medium ── */
+  --typo-display-medium-font-size: 36px;
+  --typo-display-medium-font-family: "Inter";
+  --typo-display-medium-font-weight: 700;
+  --typo-display-medium-font-style: normal;
+  --typo-display-medium-line-height: 44px;
+  --typo-display-medium-letter-spacing: -0.6px;
+  --typo-display-medium-text-decoration: none;
+  --typo-display-medium-text-case: none;
+  --typo-display-medium-font-stretch: normal;
+  --typo-display-medium-paragraph-indent: 0;
+  --typo-display-medium-paragraph-spacing: 0;
+
+  /* ── Typography: Display Small ── */
+  --typo-display-small-font-size: 32px;
+  --typo-display-small-font-family: "Inter";
+  --typo-display-small-font-weight: 700;
+  --typo-display-small-font-style: normal;
+  --typo-display-small-line-height: 40px;
+  --typo-display-small-letter-spacing: -0.4px;
+  --typo-display-small-text-decoration: none;
+  --typo-display-small-text-case: none;
+  --typo-display-small-font-stretch: normal;
+  --typo-display-small-paragraph-indent: 0;
+  --typo-display-small-paragraph-spacing: 0;
+
+  /* ── Typography: Headline Large ── */
+  --typo-headline-large-font-size: 28px;
+  --typo-headline-large-font-family: "Inter";
+  --typo-headline-large-font-weight: 700;
+  --typo-headline-large-font-style: normal;
+  --typo-headline-large-line-height: 36px;
+  --typo-headline-large-letter-spacing: -0.3px;
+  --typo-headline-large-text-decoration: none;
+  --typo-headline-large-text-case: none;
+  --typo-headline-large-font-stretch: normal;
+  --typo-headline-large-paragraph-indent: 0;
+  --typo-headline-large-paragraph-spacing: 0;
+
+  /* ── Typography: Headline Medium ── */
+  --typo-headline-medium-font-size: 24px;
+  --typo-headline-medium-font-family: "Inter";
+  --typo-headline-medium-font-weight: 600;
+  --typo-headline-medium-font-style: normal;
+  --typo-headline-medium-line-height: 32px;
+  --typo-headline-medium-letter-spacing: -0.2px;
+  --typo-headline-medium-text-decoration: none;
+  --typo-headline-medium-text-case: none;
+  --typo-headline-medium-font-stretch: normal;
+  --typo-headline-medium-paragraph-indent: 0;
+  --typo-headline-medium-paragraph-spacing: 0;
+
+  /* ── Typography: Headline Small ── */
+  --typo-headline-small-font-size: 20px;
+  --typo-headline-small-font-family: "Inter";
+  --typo-headline-small-font-weight: 600;
+  --typo-headline-small-font-style: normal;
+  --typo-headline-small-line-height: 28px;
+  --typo-headline-small-letter-spacing: -0.1px;
+  --typo-headline-small-text-decoration: none;
+  --typo-headline-small-text-case: none;
+  --typo-headline-small-font-stretch: normal;
+  --typo-headline-small-paragraph-indent: 0;
+  --typo-headline-small-paragraph-spacing: 0;
+
+  /* ── Typography: Title Large ── */
+  --typo-title-large-font-size: 18px;
+  --typo-title-large-font-family: "Inter";
+  --typo-title-large-font-weight: 600;
+  --typo-title-large-font-style: normal;
+  --typo-title-large-line-height: 26px;
+  --typo-title-large-letter-spacing: -0.1px;
+  --typo-title-large-text-decoration: none;
+  --typo-title-large-text-case: none;
+  --typo-title-large-font-stretch: normal;
+  --typo-title-large-paragraph-indent: 0;
+  --typo-title-large-paragraph-spacing: 0;
+
+  /* ── Typography: Title Medium ── */
+  --typo-title-medium-font-size: 16px;
+  --typo-title-medium-font-family: "Inter";
+  --typo-title-medium-font-weight: 600;
+  --typo-title-medium-font-style: normal;
+  --typo-title-medium-line-height: 24px;
+  --typo-title-medium-letter-spacing: 0;
+  --typo-title-medium-text-decoration: none;
+  --typo-title-medium-text-case: none;
+  --typo-title-medium-font-stretch: normal;
+  --typo-title-medium-paragraph-indent: 0;
+  --typo-title-medium-paragraph-spacing: 0;
+
+  /* ── Typography: Title Small ── */
+  --typo-title-small-font-size: 14px;
+  --typo-title-small-font-family: "Inter";
+  --typo-title-small-font-weight: 600;
+  --typo-title-small-font-style: normal;
+  --typo-title-small-line-height: 20px;
+  --typo-title-small-letter-spacing: 0;
+  --typo-title-small-text-decoration: none;
+  --typo-title-small-text-case: none;
+  --typo-title-small-font-stretch: normal;
+  --typo-title-small-paragraph-indent: 0;
+  --typo-title-small-paragraph-spacing: 0;
+
+  /* ── Typography: Body Large ── */
+  --typo-body-large-font-size: 18px;
+  --typo-body-large-font-family: "Inter";
+  --typo-body-large-font-weight: 400;
+  --typo-body-large-font-style: normal;
+  --typo-body-large-line-height: 28px;
+  --typo-body-large-letter-spacing: 0;
+  --typo-body-large-text-decoration: none;
+  --typo-body-large-text-case: none;
+  --typo-body-large-font-stretch: normal;
+  --typo-body-large-paragraph-indent: 0;
+  --typo-body-large-paragraph-spacing: 0;
+
+  /* ── Typography: Body Medium ── */
+  --typo-body-medium-font-size: 16px;
+  --typo-body-medium-font-family: "Inter";
+  --typo-body-medium-font-weight: 400;
+  --typo-body-medium-font-style: normal;
+  --typo-body-medium-line-height: 24px;
+  --typo-body-medium-letter-spacing: 0;
+  --typo-body-medium-text-decoration: none;
+  --typo-body-medium-text-case: none;
+  --typo-body-medium-font-stretch: normal;
+  --typo-body-medium-paragraph-indent: 0;
+  --typo-body-medium-paragraph-spacing: 0;
+
+  /* ── Typography: Body Small ── */
+  --typo-body-small-font-size: 14px;
+  --typo-body-small-font-family: "Inter";
+  --typo-body-small-font-weight: 400;
+  --typo-body-small-font-style: normal;
+  --typo-body-small-line-height: 20px;
+  --typo-body-small-letter-spacing: 0;
+  --typo-body-small-text-decoration: none;
+  --typo-body-small-text-case: none;
+  --typo-body-small-font-stretch: normal;
+  --typo-body-small-paragraph-indent: 0;
+  --typo-body-small-paragraph-spacing: 0;
+
+  /* ── Typography: Label Large ── */
+  --typo-label-large-font-size: 14px;
+  --typo-label-large-font-family: "Inter";
+  --typo-label-large-font-weight: 600;
+  --typo-label-large-font-style: normal;
+  --typo-label-large-line-height: 20px;
+  --typo-label-large-letter-spacing: 0;
+  --typo-label-large-text-decoration: none;
+  --typo-label-large-text-case: none;
+  --typo-label-large-font-stretch: normal;
+  --typo-label-large-paragraph-indent: 0;
+  --typo-label-large-paragraph-spacing: 0;
+
+  /* ── Typography: Label Medium ── */
+  --typo-label-medium-font-size: 12px;
+  --typo-label-medium-font-family: "Inter";
+  --typo-label-medium-font-weight: 600;
+  --typo-label-medium-font-style: normal;
+  --typo-label-medium-line-height: 18px;
+  --typo-label-medium-letter-spacing: 0;
+  --typo-label-medium-text-decoration: none;
+  --typo-label-medium-text-case: none;
+  --typo-label-medium-font-stretch: normal;
+  --typo-label-medium-paragraph-indent: 0;
+  --typo-label-medium-paragraph-spacing: 0;
+
+  /* ── Typography: Label Small ── */
+  --typo-label-small-font-size: 11px;
+  --typo-label-small-font-family: "Inter";
+  --typo-label-small-font-weight: 600;
+  --typo-label-small-font-style: normal;
+  --typo-label-small-line-height: 16px;
+  --typo-label-small-letter-spacing: 0;
+  --typo-label-small-text-decoration: none;
+  --typo-label-small-text-case: none;
+  --typo-label-small-font-stretch: normal;
+  --typo-label-small-paragraph-indent: 0;
+  --typo-label-small-paragraph-spacing: 0;
+}

@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import "../../momentum-tokens.css";
+
+:root {
+  --background: var(--color-surface-color, #f8f7f3);
+  --foreground: var(--color-on-surface, #17201c);
+  --primary: var(--color-primary-colour, #2f7d5a);
+  --primary-foreground: var(--color-on-primary-colour, #ffffff);
+  --primary-container: var(--color-primary-container, #c5ded2);
+  --on-primary-container: var(--color-on-primary-container, #174b37);
+  --surface-container: var(--color-surface-countainer, #ffffff);
+  --surface-variant: var(--color-surface-variant, #e8ecea);
+  --on-surface-variant: var(--color-on-surface-variant, #66736d);
+  --error: var(--color-error, #c94a4a);
+  --error-container: var(--color-error-container, #f4d0d0);
+  --on-error-container: var(--color-on-error-container, #7e2525);
+  --border: #d7deda;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  min-height: 100vh;
+}
