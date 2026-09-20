@@ -1,0 +1,66 @@
+// Prisma Schema for Momentum Receipts (Assessment 3)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// Reused Auth Models (Assessment 1 Slice)
+// Database-backed sessions for instant revocation
+// ==========================================
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  sessions     Session[]
+  jobs         Job[]
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ==========================================
+// Receipt Job Processing Model (AGENTS.md §9)
+// ==========================================
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  DONE
+  FAILED
+}
+
+model Job {
+  id              String     @id @default(cuid())
+  userId          String
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storageKey      String     // Storage key on disk/object storage (never the file itself)
+  status          JobStatus  @default(PENDING)
+  attemptCount    Int        @default(0)
+  errorMessage    String?    // Nullable, populated if processing fails or timeouts
+  rawOutput       Json?      // Raw model output string/json for evidence
+  validatedResult Json?      // Structured expense data validated by application Zod schema
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@index([status])
+  @@index([userId])
+}
