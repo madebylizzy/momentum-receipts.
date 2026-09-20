@@ -175,6 +175,8 @@ model Job {
 ### Storage Key Isolation
 Under no circumstances are image binary bytes written to the database. The `storageKey` column contains an opaque file reference (e.g. `receipt_b9933221-3fe4-4cb6-a67b-402967663249.png`). The file itself resides on disk under `/uploads/` during local development or inside an object storage bucket in production.
 
+![Storage Key Isolation in Job Table](docs/screenshot/job-table-storage-key-isolation.png)
+
 ---
 
 ## 5. The Concepts
@@ -283,17 +285,61 @@ The system implements two distinct AI roles with independent system prompts, tem
   3. If the second attempt passes, the job succeeds (`DONE`).
   4. If the second attempt also fails, the job transitions to `FAILED` with a detailed error message and preserves `rawOutput` for inspection.
 
+#### Real Extraction Evidence (Raw Model Output alongside Validated Result)
+Below is the live detail inspection from Prisma Studio showing full raw model output (including real DeepSeek token telemetry, model ID, and function call arguments) alongside the parsed `validatedResult` for a real SROIE receipt:
+
+![Detail View Raw Output Alongside Validated Result](docs/screenshot/job-detail-raw-output-alongside-validated-result.png)
+
+![Job Table Raw Output and Validated Results](docs/screenshot/job-table-raw-output-and-results.png)
+
+#### Validation Failure & Recovery Path Evidence
+```
+--- Controlled Test A: Recoverable Validation Error (Self-Correction Retry) ---
+[Attempt 1] Model returned malformed schema (negative total, invalid date).
+[Zod Diagnostic Feedback Sent]:
+- date: Date must be in YYYY-MM-DD format
+- totalMinorUnits: Total amount cannot be negative
+[Attempt 2] DeepSeek Self-Correction Result: SUCCESS
+Parsed Structured Data: { vendor: "Lowe's", totalMinorUnits: 34984, date: "2025-04-26", currency: "USD" }
+Job transitioned to status: DONE (attemptCount: 2)
+
+--- Controlled Test B: Unrecoverable Error (Graceful Failure in PostgreSQL) ---
+[Attempt 1] Model returned empty vendor and negative amount.
+[Attempt 2] Model failed schema on retry.
+Job [cmu9rfk7a0001vpj8dekcqt0q] transitioned to status: FAILED (attemptCount: 2)
+ErrorMessage persisted in PostgreSQL: "Schema validation failed after retry: date: Date must be in YYYY-MM-DD format; totalMinorUnits: Total amount cannot be negative; currency: Currency must be a 3-letter ISO code; lineItems.0.description: Line item description is required; category: Invalid enum value."
+RawOutput preserved for audit: true
+```
+
 ### 6. Jobs and Workers
 - **What it is:** Decoupling receipt ingestion from receipt processing. An API endpoint accepts the upload and writes a `Job` record to PostgreSQL with status `PENDING`, while a separate background worker (`src/lib/worker.ts`) processes the queued jobs asynchronously.
 - **Why used (Concrete failure avoided):** Receipt extraction requires image reading, base64 encoding, outbound network calls to DeepSeek, vision model inference, and schema validation—taking 3 to 8 seconds per image. A synchronous API request would tie up HTTP server connection threads, cause client-side browser timeouts, and create an unresponsive user experience during batch uploads.
 - **How implemented:** In-process worker queue loop that periodically claims `PENDING` jobs, sets `status: PROCESSING`, executes extraction, and marks `status: DONE` or `status: FAILED`.
 - **Alternatives considered & chosen against:** Synchronous inline route processing; rejected due to inevitable HTTP 504 gateway timeouts under realistic network and vision inference latency.
 
+#### Real Database Evidence: Successful (`DONE`) and Failed (`FAILED`) Jobs with Error Messages
+Below is the live Prisma Studio Job table showing both `DONE` jobs and `FAILED` jobs with real persisted error messages (`Connection error.`, `Schema validation failed...`) and retry attempt counts:
+
+![Job Table Success and Failure Status](docs/screenshot/job-table-success-and-failure-status.png)
+
 ### 7. Queues, FIFO Ordering & Concurrency Capping
 - **What it is:** A strict architectural limit on the number of simultaneous active AI calls permitted across the entire system at any given moment, processing jobs in First-In, First-Out (FIFO) creation order.
 - **Why used (Concrete failure avoided):** If a user uploads 10 or 50 receipt images simultaneously, spawning 50 unconstrained concurrent API calls would immediately trigger provider rate-limit rejections (HTTP 429), exhaust server memory, and create unbounded cost spikes.
 - **How implemented:** `JobWorker` tracks an atomic `activeJobsCount` counter, capping active execution at `CONFIG.CONCURRENCY_CAP` (2). New jobs remain in `PENDING` state until an active slot completes and frees capacity.
 - **Alternatives considered & chosen against:** Uncapped `Promise.all()` parallel execution; rejected due to guaranteed rate-limit thrashing and unpredictable provider billing bursts.
+
+#### Real Concurrency Cap Demonstration (5 Batch Uploads with Real DeepSeek Latency)
+When 5 receipt images are uploaded simultaneously under real DeepSeek Vision API latency (~4.0s per call), the worker claims exactly 2 slots, queuing the remaining 3 in FIFO order:
+
+| Timestamp | Active Workers | Slot 1 Job | Slot 2 Job | Pending Queue | State Transition |
+|---|---|---|---|---|---|
+| `18:21:18.549` | 1 / 2 | Job 1 (`START`) | *(empty)* | Jobs 2, 3, 4, 5 | Job 1 claimed -> `PROCESSING` |
+| `18:21:22.737` | 2 / 2 | Job 1 (`RUNNING`) | Job 2 (`START`) | Jobs 3, 4, 5 | **Concurrency cap (2) holding** |
+| `18:21:26.870` | 2 / 2 | Job 1 (`DONE`) ➔ Job 3 (`START`) | Job 2 (`RUNNING`) | Jobs 4, 5 | Slot 1 released & reclaimed by Job 3 |
+| `18:21:26.877` | 2 / 2 | Job 3 (`RUNNING`) | Job 2 (`DONE`) ➔ Job 4 (`START`) | Job 5 | Slot 2 released & reclaimed by Job 4 |
+| `18:21:26.883` | 2 / 2 | Job 3 (`DONE`) ➔ Job 5 (`START`) | Job 4 (`RUNNING`) | *(empty)* | Slot 1 released & reclaimed by Job 5 |
+| `18:21:26.891` | 1 / 2 | Job 5 (`RUNNING`) | Job 4 (`DONE`) | *(empty)* | Slot 2 idle |
+| `18:21:27.100` | 0 / 2 | Job 5 (`DONE`) | *(empty)* | *(empty)* | All jobs completed (`DONE`) |
 
 ### 8. Rate Limiting as a Cost Control (O(1) Uploads vs. O(N) Historical Summaries)
 - **What it is:** Enforcing per-user request rate ceilings on both receipt uploads and summary generation using an in-memory sliding-window token algorithm (`src/lib/rate-limit.ts`).

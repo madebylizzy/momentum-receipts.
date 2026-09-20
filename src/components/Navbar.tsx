@@ -49,9 +49,6 @@ export function Navbar() {
             <Receipt className="w-5 h-5" />
           </div>
           <span>Momentum Receipts</span>
-          <span className="text-xs bg-[#C5DED2] text-[#174B37] px-2 py-0.5 rounded-full font-medium ml-1">
-            AI Slice
-          </span>
         </Link>
 
         <div className="flex items-center gap-3">
